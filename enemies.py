@@ -19,33 +19,32 @@ class Enemy:
         self.vertical_direction = random.choice([-1, 1])  # Add vertical movement
 
     def update(self, player):
-        # Store old position
+        dx = player.hitbox.x - self.hitbox.x
+        dy = player.hitbox.y - self.hitbox.y
+        dist = (dx ** 2 + dy ** 2) ** 0.5
+        self.direction = dx / dist if dist != 0 else 0
+        self.vertical_direction = dy / dist if dist != 0 else 0
+
         old_x, old_y = self.hitbox.x, self.hitbox.y
-        
-        # Try horizontal movement
+
         self.hitbox.x += self.speed * self.direction
-        
-        # Check horizontal collision
         if self._check_collision():
             self.hitbox.x = old_x
             self.direction *= -1
-            # Try vertical movement when horizontal is blocked
-            self.hitbox.y += self.speed * self.vertical_direction
-            if self._check_collision():
-                self.hitbox.y = old_y
-                self.vertical_direction *= -1
 
-        # Check player collision
+        self.hitbox.y += self.speed * self.vertical_direction
+        if self._check_collision():
+            self.hitbox.y = old_y
+            self.vertical_direction *= -1
+
         if self.hitbox.colliderect(player.hitbox):
             print("Le joueur est touché !")
 
     def _check_collision(self):
-        """Optimized collision check using nearby tiles only"""
         start_x = max(0, self.hitbox.left // self.tile_size - 1)
         end_x = min(len(self.game_map.tiles[0]), (self.hitbox.right // self.tile_size) + 1)
         start_y = max(0, self.hitbox.top // self.tile_size - 1)
         end_y = min(len(self.game_map.tiles), (self.hitbox.bottom // self.tile_size) + 1)
-
         for y in range(start_y, end_y):
             for x in range(start_x, end_x):
                 if self.game_map.tile_kinds[self.game_map.tiles[y][x]].is_solid:
