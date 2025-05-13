@@ -110,7 +110,7 @@ def show_game_over(screen, won):
 
         pygame.display.flip()
 
-def run_game(screen):
+def run_game(screen, sound_manager=None):
     # Configuration des tuiles
     tile_size = 32
     tile_kinds = [
@@ -145,6 +145,9 @@ def run_game(screen):
 
     clock = pygame.time.Clock()
     
+    # Pour éviter les sons répétés avec la touche espace
+    space_pressed = False
+    
     while True:
         # Gestion des événements
         for event in pygame.event.get():
@@ -156,6 +159,14 @@ def run_game(screen):
         
         # Mise à jour du jeu
         keys = pygame.key.get_pressed()
+        
+        # Détection de la touche espace pour le son de tir
+        if keys[pygame.K_SPACE] and not space_pressed and sound_manager:
+            sound_manager.play_laser_shot_sound()
+            space_pressed = True
+        elif not keys[pygame.K_SPACE]:
+            space_pressed = False
+            
         player.handle_movement(keys, game_map)
         
         # Gestion des balles
@@ -167,7 +178,6 @@ def run_game(screen):
                 player.bullets.remove(bullet)
             elif result in ("wall", "expired"):  # Touche un mur ou expire
                 player.bullets.remove(bullet)
-            
         
         # Mise à jour des ennemis
         for enemy in enemies[:]:
@@ -175,6 +185,9 @@ def run_game(screen):
         
         # Collisions
         if check_collision_with_enemies(player.hitbox, enemies):
+            # Jouer le son quand on touche un ennemi
+            if sound_manager:
+                sound_manager.play_enemy_hit_sound()
             return GAME_OVER, False
         
         # Collecte des diamants
@@ -183,6 +196,9 @@ def run_game(screen):
                 diamond.collected = True
                 score += 10
                 diamonds.remove(diamond)
+                # Jouer le son quand on collecte un diamant
+                if sound_manager:
+                    sound_manager.play_coin_collect_sound()
         
         # Condition de victoire
         tile_x = player.hitbox.centerx // tile_size
